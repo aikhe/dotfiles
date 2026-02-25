@@ -2,53 +2,297 @@
 local wezterm = require("wezterm")
 local act = wezterm.action
 local mux = wezterm.mux
--- This will hold the configuration.
-local config = wezterm.config_builder()
--- local gpus = wezterm.gui.enumerate_gpus()
--- config.webgpu_preferred_adapter = gpus[1]
--- config.front_end = "WebGpu"
--- config.prefer_egl = false
 
-config.front_end = "OpenGL"
--- config.max_fps = 144
-config.default_cursor_style = "BlinkingBlock"
--- config.animation_fps = 1
--- config.cursor_blink_rate = 500
+-- Initialize configuration
+local config = wezterm.config_builder()
+
+-- ============================================================================
+-- PERFORMANCE & RENDERING
+-- ============================================================================
+config.prefer_egl = true
 config.term = "xterm-256color"
 
--- config.cell_width = 1
-config.line_height = 0.99
-config.font = wezterm.font("Cascadia Mono")
--- config.font = wezterm.font("MesloLGLDZ Nerd Font Mono")
--- config.font = wezterm.font("Inconsolata Nerd Font Mono")
-
-config.window_background_opacity = 0.9
-config.prefer_egl = true
-config.font_size = 9.4
+-- ============================================================================
+-- FONT CONFIGURATION
+-- ============================================================================
+config.font = wezterm.font("JetBrainsMono Nerd Font")
+config.font_size = 9
+config.line_height = 1
 config.use_cap_height_to_scale_fallback_fonts = true
 
+-- ============================================================================
+-- CURSOR
+-- ============================================================================
+config.default_cursor_style = "BlinkingBlock"
+
+-- ============================================================================
+-- WINDOW SETTINGS
+-- ============================================================================
 config.window_padding = {
-	left = 10,
-	right = 5,
-	top = 10,
-	bottom = 0,
+	left = 8,
+	right = 0,
+	top = 8,
+	bottom = 2,
 }
 
--- TABS
+config.window_decorations = "NONE"
+config.window_background_opacity = 1.0
+config.default_prog = { "powershell.exe", "-NoLogo" }
+config.default_cwd = "C:/Users/aikhe/Desktop/ike/local"
+
+config.window_frame = {
+	font = wezterm.font({ family = "JetBrainsMono Nerd Font", weight = "Regular" }),
+	font_size = 9.0,
+	active_titlebar_bg = "rgba(0, 0, 0, 80%)",
+	inactive_titlebar_bg = "rgba(0, 0, 0, 80%)",
+
+	border_left_width = "1.2cell",
+	border_right_width = "0.34cell",
+	border_bottom_height = "0.8cell",
+	border_top_height = "0.4cell",
+	border_left_color = "#101010",
+	border_right_color = "#101010",
+	border_bottom_color = "#101010",
+	border_top_color = "#101010",
+}
+
+-- ============================================================================
+-- TAB BAR
+-- ============================================================================
+config.use_fancy_tab_bar = false
 config.hide_tab_bar_if_only_one_tab = true
--- config.use_fancy_tab_bar = false
--- config.tab_bar_at_bottom = true
+config.tab_bar_at_bottom = true
+config.show_new_tab_button_in_tab_bar = false
+-- config.show_close_tab_button_in_tabs = false
 
--- PANES
--- config.inactive_pane_hsb = {
--- 	saturation = 0.0,
--- 	brightness = 1.0,
--- }
+-- ============================================================================
+-- KEYBOARD
+-- ============================================================================
+config.enable_kitty_keyboard = true
 
+-- ============================================================================
+-- COLOR SCHEME
+-- ============================================================================
+config.colors = {
+	foreground = "#B7B7B7",
+	background = "#101010",
 
--- This is where you actually apply your config choices
--- color scheme toggling
-wezterm.on("toggle-colorscheme", function(window, pane)
+	cursor_bg = "#ededed",
+	cursor_fg = "#101010",
+	cursor_border = "#ededed",
+
+	-- selection_fg = "#b7b7b7",
+	selection_bg = "#3d3d3d",
+
+	scrollbar_thumb = "#222222",
+	split = "#191919",
+
+	ansi = {
+		"#101010",
+		"#FFBA9D",
+		"#8ABE8A",
+		"#ffffff",
+		"#6D89A7",
+		"#485571",
+		"#708090",
+		"#939393",
+	},
+
+	brights = {
+		"#b7b7b7",
+		"#C9D9D8",
+		"#FFBA9D",
+		"#6D89A7",
+		"#485571",
+		"#FF8080",
+		"#8ABE8A",
+		"#ffffff",
+	},
+
+	tab_bar = {
+		background = "#101010",
+		inactive_tab_edge = "#101010",
+
+		active_tab = {
+			fg_color = "#939393",
+			bg_color = "#101010",
+			intensity = "Normal",
+			underline = "None",
+			italic = false,
+			strikethrough = false,
+		},
+		inactive_tab = {
+			fg_color = "#525252",
+			bg_color = "#101010",
+			intensity = "Normal",
+			underline = "None",
+			italic = false,
+			strikethrough = false,
+		},
+
+		inactive_tab_hover = {
+			fg_color = "#939393",
+			bg_color = "#101010",
+		},
+
+		new_tab = {
+			fg_color = "#3d3d3d",
+			bg_color = "#101010",
+		},
+
+		new_tab_hover = {
+			fg_color = "#b7b7b7",
+			bg_color = "#101010",
+			intensity = "Bold",
+			underline = "None",
+			italic = false,
+			strikethrough = false,
+		},
+	},
+}
+
+-- ============================================================================
+-- KEY BINDINGS
+-- ============================================================================
+config.keys = {
+	-- Color scheme toggle
+	{
+		key = "E",
+		mods = "CTRL|SHIFT|ALT",
+		action = wezterm.action.EmitEvent("toggle-colorscheme"),
+	},
+
+	-- Opacity toggle
+	{
+		key = "O",
+		mods = "CTRL|ALT",
+		action = wezterm.action_callback(function(window, _)
+			local overrides = window:get_config_overrides() or {}
+			if overrides.window_background_opacity == 1.0 then
+				overrides.window_background_opacity = 0.8
+			else
+				overrides.window_background_opacity = 1.0
+			end
+			window:set_config_overrides(overrides)
+		end),
+	},
+
+	-- Tab navigation
+	{ key = "Tab", mods = "CTRL|ALT", action = act.ActivateTabRelative(1) },
+
+	-- Pane splitting
+	{
+		key = "h",
+		mods = "CTRL|ALT|SHIFT",
+		action = act.SplitPane({ direction = "Right", size = { Percent = 50 } }),
+	},
+	{
+		key = "v",
+		mods = "CTRL|ALT|SHIFT",
+		action = act.SplitPane({ direction = "Down", size = { Percent = 50 } }),
+	},
+
+	-- Pane navigation
+	{ key = "h", mods = "CTRL|ALT", action = act.ActivatePaneDirection("Left") },
+	{ key = "j", mods = "CTRL|ALT", action = act.ActivatePaneDirection("Down") },
+	{ key = "k", mods = "CTRL|ALT", action = act.ActivatePaneDirection("Up") },
+	{ key = "l", mods = "CTRL|ALT", action = act.ActivatePaneDirection("Right") },
+
+	-- Pane resizing
+	{ key = "h", mods = "CTRL|SHIFT", action = act.AdjustPaneSize({ "Left", 5 }) },
+	{ key = "j", mods = "CTRL|SHIFT", action = act.AdjustPaneSize({ "Down", 5 }) },
+	{ key = "i", mods = "CTRL|SHIFT", action = act.AdjustPaneSize({ "Up", 5 }) },
+	{ key = "l", mods = "CTRL|SHIFT", action = act.AdjustPaneSize({ "Right", 5 }) },
+
+	-- Pane management
+	{ key = "o", mods = "CTRL", action = act.PaneSelect },
+	{ key = "9", mods = "CTRL", action = act.PaneSelect },
+	{ key = "q", mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = true }) },
+	{ key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = false }) },
+
+	-- Debug
+	{ key = "0", mods = "CTRL", action = act.ShowDebugOverlay },
+
+	-- Workspace management
+	{ key = "n", mods = "CTRL|ALT", action = act.SwitchWorkspaceRelative(1) },
+	{ key = "p", mods = "CTRL|ALT", action = act.SwitchWorkspaceRelative(-1) },
+	{
+		key = "s",
+		mods = "CTRL|ALT",
+		action = act.ShowLauncherArgs({ flags = "FUZZY|WORKSPACES" }),
+	},
+	{
+		key = "c",
+		mods = "CTRL|ALT",
+		action = wezterm.action_callback(function(window, pane)
+			local workspace_name = "workspace_" .. os.time()
+			window:perform_action(
+				act.SwitchToWorkspace({
+					name = workspace_name,
+				}),
+				pane
+			)
+		end),
+	},
+	{
+		key = "r",
+		mods = "CTRL|ALT|SHIFT",
+		action = act.PromptInputLine({
+			description = "Enter new tab title:",
+			action = wezterm.action_callback(function(window, pane, line)
+				if line then
+					window:active_tab():set_title(line)
+				end
+			end),
+		}),
+	},
+	{
+		key = "r",
+		mods = "CTRL|ALT",
+		action = act.PromptInputLine({
+			description = "Enter new workspace name:",
+			action = wezterm.action_callback(function(window, pane, line)
+				if line then
+					wezterm.mux.rename_workspace(wezterm.mux.get_active_workspace(), line)
+				end
+			end),
+		}),
+	},
+}
+
+-- Tab activation keybindings (Ctrl+Alt+1-9)
+for i = 1, 9 do
+	table.insert(config.keys, {
+		key = tostring(i),
+		mods = "CTRL|ALT",
+		action = act.ActivateTab(i - 1),
+	})
+end
+
+-- Workspace activation keybindings (Ctrl+1-9)
+for i = 1, 9 do
+	table.insert(config.keys, {
+		key = tostring(i),
+		mods = "CTRL",
+		action = wezterm.action_callback(function(window, pane)
+			local workspaces = wezterm.mux.get_workspace_names()
+			table.sort(workspaces)
+			if #workspaces >= i then
+				window:perform_action(
+					act.SwitchToWorkspace({
+						name = workspaces[i],
+					}),
+					pane
+				)
+			end
+		end),
+	})
+end
+
+-- ============================================================================
+-- EVENTS
+-- ============================================================================
+wezterm.on("toggle-colorscheme", function(window)
 	local overrides = window:get_config_overrides() or {}
 	if overrides.color_scheme == "Zenburn" then
 		overrides.color_scheme = "Cloud (terminal.sexy)"
@@ -58,147 +302,78 @@ wezterm.on("toggle-colorscheme", function(window, pane)
 	window:set_config_overrides(overrides)
 end)
 
--- keymaps
-config.keys = {
-	{
-		key = "E",
-		mods = "CTRL|SHIFT|ALT",
-		action = wezterm.action.EmitEvent("toggle-colorscheme"),
-	},
-	{
-		key = "h",
-		mods = "CTRL|SHIFT|ALT",
-		action = wezterm.action.SplitPane({
-			direction = "Right",
-			size = { Percent = 50 },
-		}),
-	},
-	{
-		key = "v",
-		mods = "CTRL|SHIFT|ALT",
-		action = wezterm.action.SplitPane({
-			direction = "Down",
-			size = { Percent = 50 },
-		}),
-	},
-	{
-		key = "h",
-		mods = "CTRL|SHIFT",
-		action = act.AdjustPaneSize({ "Left", 5 }),
-	},
-	{
-		key = "j",
-		mods = "CTRL|SHIFT",
-		action = act.AdjustPaneSize({ "Down", 5 }),
-	},
-	{
-		key = "k",
-		mods = "CTRL|SHIFT",
-		action = act.AdjustPaneSize({ "Up", 5 }),
-	},
-	{
-		key = "l",
-		mods = "CTRL|SHIFT",
-		action = act.AdjustPaneSize({ "Right", 5 }),
-	},
-	{ key = "9", mods = "CTRL", action = act.PaneSelect },
-	{ key = "q", mods = "CTRL", action = act.ShowDebugOverlay },
-	{
-		key = "O",
-		mods = "CTRL|ALT",
-		-- toggling opacity
-		action = wezterm.action_callback(function(window, _)
-			local overrides = window:get_config_overrides() or {}
-			if overrides.window_background_opacity == 1.0 then
-				overrides.window_background_opacity = 0.9
-			else
-				overrides.window_background_opacity = 1.0
-			end
-			window:set_config_overrides(overrides)
-		end),
-	},
-}
-
--- For example, changing the color scheme:
-config.color_scheme = "Cloud (terminal.sexy)"
-config.colors = {
-	-- background = '#3b224c',
-	-- background = "#181616", -- vague.nvim bg
-	-- background = "#080808", -- almost black
-	background = "#0c0b0f", -- dark purple
-	-- background = "#020202", -- dark purple
-	-- background = "#17151c", -- brighter purple
-	-- background = "#16141a",
-	-- background = "#0e0e12", -- bright washed lavendar
-	-- background = 'rgba(59, 34, 76, 100%)',
-	cursor_border = "#bea3c7",
-	-- cursor_fg = "#281733",
-	cursor_bg = "#bea3c7",
-	-- selection_fg = '#281733',
-
-	tab_bar = {
-		background = "#0c0b0f",
-		-- background = "rgba(0, 0, 0, 0%)",
-		active_tab = {
-			bg_color = "#0c0b0f",
-			fg_color = "#bea3c7",
-			intensity = "Normal",
-			underline = "None",
-			italic = false,
-			strikethrough = false,
+wezterm.on("gui-startup", function()
+	mux.spawn_window({
+		width = 134,
+		height = 34,
+		position = {
+			x = -10,
+			y = -2,
 		},
-		inactive_tab = {
-			bg_color = "#0c0b0f",
-			fg_color = "#f8f2f5",
-			intensity = "Normal",
-			underline = "None",
-			italic = false,
-			strikethrough = false,
-		},
-
-		new_tab = {
-			-- bg_color = "rgba(59, 34, 76, 50%)",
-			bg_color = "#0c0b0f",
-			fg_color = "white",
-		},
-	},
-}
-
-config.window_frame = {
-	font = wezterm.font({ family = "Cascadia Mono", weight = "Regular" }),
-	active_titlebar_bg = "#0c0b0f",
-	active_titlebar_bg = "#181616",
-}
-
--- config.window_decorations = "INTEGRATED_BUTTONS | RESIZE"
-config.window_decorations = "NONE | RESIZE"
-config.default_prog = { "powershell.exe", "-NoLogo" }
--- config.initial_cols = 80
--- config.window_background_image = "C:/dev/misc/berk.png"
--- config.window_background_image_hsb = {
--- 	brightness = 0.1,
--- }
-
-wezterm.on("gui-startup", function(cmd)
-	local args = {}
-	if cmd then
-		args = cmd.args
-	end
-
-	local tab, pane, window = mux.spawn_window({ width = 170, height = 48,   position = {
-    x = -10,
-    y = -2,
-    -- Optional origin to use for x and y.
-    -- Possible values:
-    -- * "ScreenCoordinateSystem" (this is the default)
-    -- * "MainScreen" (the primary or main screen)
-    -- * "ActiveScreen" (whichever screen hosts the active/focused window)
-    -- * {Named="HDMI-1"} - uses a screen by name. See wezterm.gui.screens()
-    -- origin = "ScreenCoordinateSystem"
-  },  })
-	-- window:gui_window():maximize()
-	-- window:gui_window():set_position(0, 0)
+	})
 end)
 
--- and finally, return the configuration to wezterm
+-- Format tab title to show custom titles
+wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
+	local title = tab.tab_title
+	if not title or #title == 0 then
+		title = tab.active_pane.title
+	end
+
+	return {
+		{ Text = "" }, -- left padding
+		{ Text = title },
+		{ Text = "  " }, -- right padding
+	}
+end)
+
+-- ============================================================================
+-- PLUGINS
+-- ============================================================================
+local tabline = wezterm.plugin.require("https://github.com/michaelbrusegard/tabline.wez")
+
+tabline.setup({
+	options = {
+		icons_enabled = true,
+		theme = "Catppuccin Mocha",
+		tabs_enabled = true,
+		theme_overrides = {
+			normal_mode = {
+				-- To remove the background color, set the 'bg' to your terminal's background color
+				a = { bg = "#101010", fg = "#deeeed" },
+				b = { bg = "#101010", fg = "#deeeed" },
+				c = { bg = "#101010", fg = "#444444" },
+				-- You can do the same for other modes/sections as needed
+				-- inactive_mode = { ... }
+			},
+		},
+		component_separators = "",
+		tab_separators = {
+			left = "",
+			right = "",
+		},
+		section_separators = "",
+	},
+	sections = {
+		tabline_a = { " " },
+		tabline_b = { "workspace" },
+		tabline_c = { " " },
+		tab_active = {
+			"index",
+			{ "parent", padding = { left = 1, right = 1 } },
+			"/",
+			{ "cwd", padding = { left = 2, right = 2 } },
+			{ "zoomed", padding = { left = 1, right = 1 } },
+		},
+		tab_inactive = {
+			"index",
+			{ "process", padding = { left = 1, right = 2 } },
+		},
+		tabline_x = { "" },
+		tabline_y = { "domain" },
+		tabline_z = { "" },
+	},
+	extensions = {},
+})
+
 return config
